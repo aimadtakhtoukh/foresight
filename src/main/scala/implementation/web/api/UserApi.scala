@@ -16,7 +16,7 @@ import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
 object UserApi extends RouteProvider {
-  override def routes(implicit executionContext: ExecutionContext): Route =
+  override def routes(implicit ec: ExecutionContext): Route =
     pathPrefix("user") {
       concat(
         allUsers,
@@ -31,45 +31,45 @@ object UserApi extends RouteProvider {
 
   import ModelToDTO._
 
-  private def allUsers(implicit executionContext: ExecutionContext) : Route =
+  private def allUsers(implicit ec: ExecutionContext) : Route =
     path("all") {
       get {
         onComplete(UserDatabaseAccess.all()) {
+          case Failure(ex) => complete(InternalServerError, s"An error occurred: ${ex.getMessage}")
+          case Success(Left(domain.database.error.Unknown(ex))) => complete(InternalServerError, s"An error occurred: ${ex.getMessage}")
           case Success(Right(users)) =>
             complete(HttpEntity(ContentTypes.`application/json`, users.map(toDTO).asJson.noSpaces))
-          case Success(Left(domain.database.error.Unknown(ex))) => complete(InternalServerError, s"An error occurred: ${ex.getMessage}")
-          case Failure(ex) => complete(InternalServerError, s"An error occurred: ${ex.getMessage}")
         }
       }
     }
 
-  private def byId(implicit executionContext: ExecutionContext) : Route =
+  private def byId(implicit ec: ExecutionContext) : Route =
     path(LongNumber) {id: Long =>
       get {
         onComplete(UserDatabaseAccess.byId(Id(id))) {
-          case Success(Right(user)) =>
-            complete(HttpEntity(ContentTypes.`application/json`, toDTO(user).asJson.noSpaces))
+          case Failure(ex) => complete(InternalServerError, s"An error occurred: ${ex.getMessage}")
           case Success(Left(domain.database.error.NotFound)) => complete(NotFound, s"No user with id $id")
           case Success(Left(domain.database.error.Unknown(ex))) => complete(InternalServerError, s"An error occurred: ${ex.getMessage}")
-          case Failure(ex) => complete(InternalServerError, s"An error occurred: ${ex.getMessage}")
+          case Success(Right(user)) =>
+            complete(HttpEntity(ContentTypes.`application/json`, toDTO(user).asJson.noSpaces))
         }
       }
     }
 
-  private def byName(implicit executionContext: ExecutionContext) : Route =
+  private def byName(implicit ec: ExecutionContext) : Route =
     path("name" / Segment) { name : String =>
       get {
         onComplete(UserDatabaseAccess.byName(name)) {
-          case Success(Right(user)) =>
-            complete(HttpEntity(ContentTypes.`application/json`, toDTO(user).asJson.noSpaces))
+          case Failure(ex) => complete(InternalServerError, s"An error occurred: ${ex.getMessage}")
           case Success(Left(domain.database.error.NotFound)) => complete(NotFound, s"No user with name $name")
           case Success(Left(domain.database.error.Unknown(ex))) => complete(InternalServerError, s"An error occurred: ${ex.getMessage}")
-          case Failure(ex) => complete(InternalServerError, s"An error occurred: ${ex.getMessage}")
+          case Success(Right(user)) =>
+            complete(HttpEntity(ContentTypes.`application/json`, toDTO(user).asJson.noSpaces))
         }
       }
     }
 
-  private def add(implicit executionContext: ExecutionContext): Route = {
+  private def add(implicit ec: ExecutionContext): Route = {
     path("add") {
       post {
         entity(as[UserDTO]) { dto =>
@@ -77,10 +77,10 @@ object UserApi extends RouteProvider {
             case None => complete(BadRequest, s"User is empty")
             case Some(user) =>
               onComplete(UserDatabaseAccess.add(user)) {
-                case Success(Right(_)) => complete(StatusCodes.OK)
+                case Failure(ex) => complete(InternalServerError, s"An error occurred: ${ex.getMessage}")
                 case Success(Left(domain.database.error.Unknown(ex))) =>
                   complete(InternalServerError, s"An error occurred: ${ex.getMessage}")
-                case Failure(ex) => complete(InternalServerError, s"An error occurred: ${ex.getMessage}")
+                case Success(Right(_)) => complete(StatusCodes.OK)
               }
           }
         }
@@ -88,7 +88,7 @@ object UserApi extends RouteProvider {
     }
   }
 
-  private def update(implicit executionContext: ExecutionContext): Route =
+  private def update(implicit ec: ExecutionContext): Route =
     path("update" / LongNumber) {id =>
       post {
         entity(as[UserDTO]) { dto =>
@@ -96,10 +96,10 @@ object UserApi extends RouteProvider {
             case None => complete(BadRequest, s"User is empty")
             case Some(user) =>
               onComplete(UserDatabaseAccess.update(Id(id), user.copy(id = Some(Id(id))))) {
-                case Success(Right(_)) => complete(StatusCodes.OK)
+                case Failure(ex) => complete(InternalServerError, s"An error occurred: ${ex.getMessage}")
                 case Success(Left(domain.database.error.Unknown(ex))) =>
                   complete(InternalServerError, s"An error occurred: ${ex.getMessage}")
-                case Failure(ex) => complete(InternalServerError, s"An error occurred: ${ex.getMessage}")
+                case Success(Right(_)) => complete(StatusCodes.OK)
               }
           }
         }

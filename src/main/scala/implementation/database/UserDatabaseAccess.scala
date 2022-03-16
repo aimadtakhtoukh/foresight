@@ -18,11 +18,11 @@ object UserDatabaseAccess extends domain.database.UserDatabaseAccess
   implicit val db: JdbcBackend.Database = ConnectionConfig.database
   implicit val users: TableQuery[Users] = TableQuery[Users]
 
-  override def all()(implicit executionContext: ExecutionContext): Future[Either[Error, Seq[User]]] = getAll()
+  override def all()(implicit ec: ExecutionContext): Future[Either[Error, Seq[User]]] = getAll()
 
-  override def byId(id: Id)(implicit executionContext: ExecutionContext): Future[Either[Error, User]] = getById(id)
+  override def byId(id: Id)(implicit ec: ExecutionContext): Future[Either[Error, User]] = getById(id)
 
-  override def byName(name: String)(implicit executionContext: ExecutionContext): Future[Either[Error, User]] =
+  override def byName(name: String)(implicit ec: ExecutionContext): Future[Either[Error, User]] =
     db.run(users.filter(_.name === name).result.headOption)
       .map {
         case Some(user : User) => Right(user)
@@ -30,9 +30,9 @@ object UserDatabaseAccess extends domain.database.UserDatabaseAccess
       }
       .recover { case ex: Throwable => Left(Unknown(ex))}
 
-  override def add(user: User)(implicit executionContext: ExecutionContext): Future[Either[Error, Int]] = addOne(user)
+  override def add(user: User)(implicit ec: ExecutionContext): Future[Either[Error, Int]] = addOne(user)
 
-  override def update(id: Id, user: User)(implicit executionContext: ExecutionContext): Future[Either[Error, Int]] = {
+  override def update(id: Id, user: User)(implicit ec: ExecutionContext): Future[Either[Error, Int]] = {
     val updateQuery: Query[Users, User, Seq] = for(user <- users if user.id === id.value) yield user
     db.run(updateQuery.update(user))
       .map(Right(_))

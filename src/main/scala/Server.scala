@@ -30,7 +30,7 @@ import scala.io.StdIn
 //  } finally db.close
 //}
 
-object Main extends App {
+object Server extends App {
   implicit val system: ActorSystem[Nothing] = ActorSystem(Behaviors.empty, "foresight")
   implicit val executionContext: ExecutionContext = system.executionContext
 
