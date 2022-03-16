@@ -6,9 +6,9 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.PathMatchers.LongNumber
 import akka.http.scaladsl.server.Route
 import domain.models.{Id, User}
+import domain.web.api.route.RouteProvider
 import implementation.database.UserDatabaseAccess
 import implementation.web.api.json.CirceSupport._
-import implementation.web.api.traits.RouteProvider
 import io.circe.generic.auto._
 import io.circe.syntax._
 
@@ -31,7 +31,7 @@ object UserApi extends RouteProvider {
 
   import ModelToDTO._
 
-  private def allUsers(implicit ec: ExecutionContext) : Route =
+  def allUsers(implicit ec: ExecutionContext) : Route =
     path("all") {
       get {
         onComplete(UserDatabaseAccess.all()) {
@@ -43,7 +43,7 @@ object UserApi extends RouteProvider {
       }
     }
 
-  private def byId(implicit ec: ExecutionContext) : Route =
+  def byId(implicit ec: ExecutionContext) : Route =
     path(LongNumber) {id: Long =>
       get {
         onComplete(UserDatabaseAccess.byId(Id(id))) {
@@ -56,7 +56,7 @@ object UserApi extends RouteProvider {
       }
     }
 
-  private def byName(implicit ec: ExecutionContext) : Route =
+  def byName(implicit ec: ExecutionContext) : Route =
     path("name" / Segment) { name : String =>
       get {
         onComplete(UserDatabaseAccess.byName(name)) {
@@ -69,7 +69,7 @@ object UserApi extends RouteProvider {
       }
     }
 
-  private def add(implicit ec: ExecutionContext): Route = {
+  def add(implicit ec: ExecutionContext): Route = {
     path("add") {
       post {
         entity(as[UserDTO]) { dto =>
@@ -88,7 +88,7 @@ object UserApi extends RouteProvider {
     }
   }
 
-  private def update(implicit ec: ExecutionContext): Route =
+  def update(implicit ec: ExecutionContext): Route =
     path("update" / LongNumber) {id =>
       post {
         entity(as[UserDTO]) { dto =>

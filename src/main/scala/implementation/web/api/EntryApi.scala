@@ -5,9 +5,9 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import domain.models._
+import domain.web.api.route.RouteProvider
 import implementation.database.EntryDatabaseAccess
 import implementation.web.api.json.CirceSupport._
-import implementation.web.api.traits.RouteProvider
 import io.circe.generic.auto._
 import io.circe.syntax._
 

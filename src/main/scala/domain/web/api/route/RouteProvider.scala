@@ -1,4 +1,4 @@
-package implementation.web.api.traits
+package domain.web.api.route
 
 import akka.http.scaladsl.server.Route
 
