@@ -1,41 +1,41 @@
 package implementation.database
 
-import domain.database.error.{Error, NotFound, Unknown}
+import domain.database.error.{DatabaseError, NotFound, Unknown}
 import domain.models.{Id, User}
-import implementation.database.operations.{AddOne, GetAll, GetById}
+import implementation.database.operations.{AddOne, GetAll, GetById, UpdateOne}
 import implementation.database.tables.Users
 import implementation.database.utils.ConnectionConfig
 import slick.jdbc.JdbcBackend
 import slick.jdbc.MySQLProfile.api._
+import zio.{IO, ZIO}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 object UserDatabaseAccess extends domain.database.UserDatabaseAccess
   with GetById[User, Users]
   with GetAll[User, Users]
-  with AddOne[User, Users] {
+  with AddOne[User, Users]
+  with UpdateOne[User, Users] {
 
   implicit val db: JdbcBackend.Database = ConnectionConfig.database
   implicit val users: TableQuery[Users] = TableQuery[Users]
 
-  override def all()(implicit ec: ExecutionContext): Future[Either[Error, Seq[User]]] = getAll()
+  override def all() : IO[DatabaseError, Seq[User]] = getAll()
 
-  override def byId(id: Id)(implicit ec: ExecutionContext): Future[Either[Error, User]] = getById(id)
+  override def byId(id: Id) : IO[DatabaseError, User] = getById(id)
 
-  override def byName(name: String)(implicit ec: ExecutionContext): Future[Either[Error, User]] =
-    db.run(users.filter(_.name === name).result.headOption)
-      .map {
-        case Some(user : User) => Right(user)
-        case None => Left(NotFound)
-      }
-      .recover { case ex: Throwable => Left(Unknown(ex))}
+  override def byName(name: String) : IO[DatabaseError, User] =
+    for {
+      query <- ZIO.succeed(users.filter(_.name === name).result.headOption)
+      resultOption <- ZIO.fromFuture(_ => db.run(query)).mapError(ex => Unknown(ex))
+      result <- ZIO.fromOption(resultOption).orElseFail(NotFound)
+    } yield result
 
-  override def add(user: User)(implicit ec: ExecutionContext): Future[Either[Error, Int]] = addOne(user)
+  override def add(user: User) : IO[DatabaseError, Int] = addOne(user)
 
-  override def update(id: Id, user: User)(implicit ec: ExecutionContext): Future[Either[Error, Int]] = {
-    val updateQuery: Query[Users, User, Seq] = for(user <- users if user.id === id.value) yield user
-    db.run(updateQuery.update(user))
-      .map(Right(_))
-      .recover { case ex: Throwable => Left(Unknown(ex))}
-  }
+  override def update(id: Id, user: User) : IO[DatabaseError, Int] = updateOne(id, user)
+//    for {
+//      updateQuery <- ZIO.succeed(for(user <- users if user.id === id.value) yield user)
+//      result <- ZIO.fromFuture(_ => db.run(updateQuery.update(user))).mapError(ex => Unknown(ex))
+//    } yield result
 }

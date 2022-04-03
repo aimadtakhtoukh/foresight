@@ -1,21 +1,17 @@
 package implementation.database.operations
 
-import domain.database.error.{Error, Unknown}
+import domain.database.error.{DatabaseError, Unknown}
 import slick.jdbc.JdbcBackend.Database
 import slick.jdbc.MySQLProfile.api._
 import slick.lifted.TableQuery
-
-import scala.concurrent.{ExecutionContext, Future}
+import zio.{IO, ZIO}
 
 trait GetAll[Value, Tables <: Table[Value]] {
   def getAll()
             (implicit db : Database,
-             tableQuery : TableQuery[Tables],
-             executionContext: ExecutionContext
-            ): Future[Either[Error, Seq[Value]]] =
-    db.run(tableQuery.result)
-      .map(Right(_))
-      .recover {
-        case ex: Throwable => Left(Unknown(ex))
-      }
+             tableQuery : TableQuery[Tables]
+            ): IO[DatabaseError, Seq[Value]] =
+    ZIO
+      .fromFuture(_ => db.run(tableQuery.result))
+      .mapError(Unknown)
 }

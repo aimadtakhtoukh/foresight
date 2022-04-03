@@ -9,6 +9,8 @@ object models {
 
   case class User(id: Option[Id], name: String) extends WithId
 
+  case class SecurityUser(id : Option[Id] = None, userId : Id, securityId : String, `type` : String) extends WithId
+
   sealed trait Availability
   case object On extends Availability
   case object Off extends Availability

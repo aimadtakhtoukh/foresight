@@ -7,12 +7,18 @@ lazy val root = (project in file("."))
     name := "foresight"
   )
 
+libraryDependencies += "com.github.pureconfig" %% "pureconfig" % "0.17.1"
+//Cats
 libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-core" % "2.7.0",
-  "org.typelevel" %% "cats-effect" % "3.3.5"
+)
+libraryDependencies ++= Seq(
+  "dev.zio" %% "zio" % "1.0.13",
+  "dev.zio" %% "zio-interop-cats" % "3.2.9.1",
+  "io.scalac" %% "zio-akka-http-interop" % "0.5.0"
 )
 //Akka
-val AkkaVersion = "2.6.18"
+val AkkaVersion = "2.6.19"
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor-typed" % AkkaVersion,
   "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
